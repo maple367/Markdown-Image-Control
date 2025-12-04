@@ -4,6 +4,10 @@
   "description": "Marp-like image size and filter syntax for VS Code Markdown preview.",
   "version": "0.0.1",
   "publisher": "Maple367",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maple367/Markdown-Image-Control"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
