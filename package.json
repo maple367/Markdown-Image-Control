@@ -2,12 +2,13 @@
   "name": "markdown-image-control",
   "displayName": "Markdown Image Control",
   "description": "Marp-like image size and filter syntax for VS Code Markdown preview.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "Maple367",
   "repository": {
     "type": "git",
     "url": "https://github.com/maple367/Markdown-Image-Control"
   },
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.80.0"
   },
