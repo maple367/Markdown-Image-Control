@@ -1,0 +1,31 @@
+{
+  "name": "markdown-image-control",
+  "displayName": "Markdown Image Control",
+  "description": "Marp-like image size and filter syntax for VS Code Markdown preview.",
+  "version": "0.0.1",
+  "publisher": "Maple367",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "markdown.markdownItPlugins": [
+      {
+        "name": "image-options-plugin",
+        "entry": "./extension"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

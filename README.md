@@ -1,2 +1,4 @@
 # Markdown Image Control
 Marp-like image size and filter syntax for VS Code Markdown preview.
+
+![preview](preview.png)
