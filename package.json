@@ -1,0 +1,74 @@
+{
+  "name": "markdown-image-picgo-control",
+  "displayName": "Markdown Image PicGo Control",
+  "description": "Self-hosted VS Code extension: upload pasted Markdown images with PicGo and control Markdown preview image size/filter syntax.",
+  "version": "0.1.0",
+  "publisher": "Maple367",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maple367/markdown-image-picgo-control.git"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "markdown-image-picgo-control.uploadFromClipboard",
+        "title": "Markdown Image: Upload Image from Clipboard with PicGo"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markdown-image-picgo-control.uploadFromClipboard",
+        "key": "ctrl+alt+v",
+        "mac": "cmd+alt+v",
+        "when": "editorTextFocus && editorLangId == markdown"
+      }
+    ],
+    "configuration": {
+      "title": "Markdown Image PicGo Control",
+      "properties": {
+        "markdown-image-picgo-control.picgoPath": {
+          "type": "string",
+          "default": "picgo",
+          "description": "Path to PicGo CLI executable"
+        },
+        "markdown-image-picgo-control.autoUploadOnPaste": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically upload image when pasting in Markdown files"
+        }
+      }
+    },
+    "markdown.markdownItPlugins": [
+      {
+        "name": "markdown-image-control",
+        "entry": "./out/extension"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
