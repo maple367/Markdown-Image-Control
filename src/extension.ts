@@ -134,7 +134,7 @@ function imageOptionsPlugin(md: any) {
  * 获取配置
  */
 function getConfig() {
-    const config = vscode.workspace.getConfiguration('markdown-image-picgo-control');
+    const config = vscode.workspace.getConfiguration('markdown-image-control');
     return {
         picgoPath: config.get<string>('picgoPath', 'picgo'),
         autoUploadOnPaste: config.get<boolean>('autoUploadOnPaste', true)
@@ -470,7 +470,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 注册手动上传命令 (Cmd+Alt+V)
     const uploadCommand = vscode.commands.registerCommand(
-        'markdown-image-picgo-control.uploadFromClipboard',
+        'markdown-image-control.uploadFromClipboard',
         uploadClipboardImage
     );
     context.subscriptions.push(uploadCommand);

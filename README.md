@@ -1,4 +1,4 @@
-# Markdown Image PicGo Control
+# Markdown Image Control
 
 A self-hosted VS Code extension that combines:
 
@@ -36,8 +36,8 @@ Directives are removed from the rendered `alt` text and converted to inline styl
 
 ## Settings
 
-- `markdown-image-picgo-control.picgoPath`: PicGo CLI executable path. Default: `picgo`
-- `markdown-image-picgo-control.autoUploadOnPaste`: automatically upload image paste in Markdown. Default: `true`
+-- `markdown-image-control.picgoPath`: PicGo CLI executable path. Default: `picgo`
+-- `markdown-image-control.autoUploadOnPaste`: automatically upload image paste in Markdown. Default: `true`
 
 ## Build locally
 
@@ -45,7 +45,7 @@ Directives are removed from the rendered `alt` text and converted to inline styl
 npm install
 npm run compile
 npx @vscode/vsce package
-code --install-extension markdown-image-picgo-control-0.1.0.vsix
+code --install-extension markdown-image-control-0.2.0.vsix
 ```
 
 ## Credits / upstream

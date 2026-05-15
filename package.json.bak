@@ -1,9 +1,9 @@
 {
-  "name": "markdown-image-control",
-  "displayName": "Markdown Image Control",
+  "name": "markdown-image-picgo-control",
+  "displayName": "Markdown Image PicGo Control",
   "description": "Self-hosted VS Code extension: upload pasted Markdown images with PicGo and control Markdown preview image size/filter syntax.",
-  "version": "0.2.0",
-  "publisher": "maple367",
+  "version": "0.1.0",
+  "publisher": "Maple367",
   "license": "MIT",
   "icon": "icon.png",
   "repository": {
@@ -21,29 +21,29 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-      "commands": [
+    "commands": [
       {
-        "command": "markdown-image-control.uploadFromClipboard",
+        "command": "markdown-image-picgo-control.uploadFromClipboard",
         "title": "Markdown Image: Upload Image from Clipboard with PicGo"
       }
     ],
-      "keybindings": [
+    "keybindings": [
       {
-        "command": "markdown-image-control.uploadFromClipboard",
+        "command": "markdown-image-picgo-control.uploadFromClipboard",
         "key": "ctrl+alt+v",
         "mac": "cmd+alt+v",
         "when": "editorTextFocus && editorLangId == markdown"
       }
     ],
     "configuration": {
-      "title": "Markdown Image Control",
+      "title": "Markdown Image PicGo Control",
       "properties": {
-        "markdown-image-control.picgoPath": {
+        "markdown-image-picgo-control.picgoPath": {
           "type": "string",
           "default": "picgo",
           "description": "Path to PicGo CLI executable"
         },
-        "markdown-image-control.autoUploadOnPaste": {
+        "markdown-image-picgo-control.autoUploadOnPaste": {
           "type": "boolean",
           "default": true,
           "description": "Automatically upload image when pasting in Markdown files"
@@ -68,7 +68,6 @@
     "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "@vscode/vsce": "^3.9.1",
     "eslint": "^8.0.0",
     "typescript": "^5.0.0"
   }
