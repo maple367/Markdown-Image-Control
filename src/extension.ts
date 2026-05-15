@@ -11,6 +11,17 @@ interface ImageOptions {
     filters: string[];
 }
 
+interface PicgoCommandCandidate {
+    command: string;
+    argsPrefix: string[];
+    displayName: string;
+}
+
+interface PicgoUploadResult {
+    imageUrl: string | null;
+    errorMessage: string | null;
+}
+
 /**
  * Parse Marp-like image control directives from markdown image alt text.
  * Example: ![Caption w:200px h:100px blur:5px brightness:1.2](image.png)
@@ -77,6 +88,66 @@ function parseImageOptions(alt: string): ImageOptions {
 
 function normalizeCssLength(value: string): string {
     return /[a-z%]$/i.test(value) ? value : `${value}px`;
+}
+
+function splitCommandLine(input: string): string[] {
+    const parts: string[] = [];
+    const matcher = /"([^"]*)"|'([^']*)'|[^\s]+/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = matcher.exec(input)) !== null) {
+        parts.push(match[1] ?? match[2] ?? match[0]);
+    }
+
+    return parts;
+}
+
+function buildPicgoCandidates(configuredPath: string): PicgoCommandCandidate[] {
+    const raw = configuredPath.trim() || 'picgo';
+    const tokens = splitCommandLine(raw);
+    const command = tokens[0] || 'picgo';
+    const argsPrefix = tokens.slice(1);
+    const isDefaultPath = command === 'picgo' && argsPrefix.length === 0;
+    const candidates: PicgoCommandCandidate[] = [];
+
+    const addCandidate = (command: string, argsPrefix: string[] = []) => {
+        const exists = candidates.some(
+            (c) => c.command === command && c.argsPrefix.join('\u0000') === argsPrefix.join('\u0000')
+        );
+        if (!exists) {
+            candidates.push({
+                command,
+                argsPrefix,
+                displayName: [command, ...argsPrefix].join(' ')
+            });
+        }
+    };
+
+    addCandidate(command, argsPrefix);
+
+    if (isDefaultPath) {
+        if (process.platform === 'win32') {
+            addCandidate('picgo.cmd');
+            addCandidate('picgo.exe');
+            addCandidate('npx', ['picgo']);
+            addCandidate('npx.cmd', ['picgo']);
+        } else {
+            addCandidate('npx', ['picgo']);
+        }
+    }
+
+    return candidates;
+}
+
+async function showPicgoConfigError(message: string): Promise<void> {
+    const openSettingsAction = 'Open PicGo Path Setting';
+    const picked = await vscode.window.showErrorMessage(message, openSettingsAction);
+    if (picked === openSettingsAction) {
+        await vscode.commands.executeCommand(
+            'workbench.action.openSettings',
+            'markdown-image-control.picgoPath'
+        );
+    }
 }
 
 function imageOptionsPlugin(md: any) {
@@ -251,48 +322,102 @@ async function saveDataTransferImageToFile(dataTransfer: vscode.DataTransfer): P
  */
 async function uploadWithPicgo(imagePath: string): Promise<string | null> {
     const config = getConfig();
-    const picgoPath = config.picgoPath;
+    const candidates = buildPicgoCandidates(config.picgoPath);
+    const attempted: string[] = [];
+    const runtimeErrors: string[] = [];
 
-    return new Promise((resolve) => {
-        const picgo = spawn(picgoPath, ['upload', imagePath]);
-        
-        let stdout = '';
-        let stderr = '';
+    for (const candidate of candidates) {
+        attempted.push(candidate.displayName);
 
-        picgo.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
+        const result = await new Promise<PicgoUploadResult>((resolve) => {
+            const args = [...candidate.argsPrefix, 'upload', imagePath];
+            let settled = false;
+            const finish = (value: PicgoUploadResult) => {
+                if (!settled) {
+                    settled = true;
+                    resolve(value);
+                }
+            };
 
-        picgo.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
+            let picgo;
+            try {
+                picgo = spawn(candidate.command, args, {
+                    shell: process.platform === 'win32',
+                    windowsHide: true
+                });
+            } catch (err) {
+                const spawnErr = err as NodeJS.ErrnoException;
+                runtimeErrors.push(
+                    `Command '${candidate.displayName}' threw before start: ${spawnErr.message}`
+                );
+                finish({ imageUrl: null, errorMessage: null });
+                return;
+            }
 
-        picgo.on('close', (code) => {
-            if (code === 0) {
-                // picgo 成功时会输出上传后的 URL
-                const urlMatch = stdout.match(/https?:\/\/[^\s\]\n]+/);
-                if (urlMatch) {
-                    resolve(urlMatch[0].trim());
-                } else {
+            let stdout = '';
+            let stderr = '';
+
+            picgo.stdout.on('data', (data: Buffer) => {
+                stdout += data.toString();
+            });
+
+            picgo.stderr.on('data', (data: Buffer) => {
+                stderr += data.toString();
+            });
+
+            picgo.on('close', (code: number | null) => {
+                if (code === 0) {
+                    // picgo 成功时会输出上传后的 URL
+                    const urlMatch = stdout.match(/https?:\/\/[^\s\]\n]+/);
+                    if (urlMatch) {
+                        finish({ imageUrl: urlMatch[0].trim(), errorMessage: null });
+                        return;
+                    }
+
                     const trimmedOutput = stdout.trim();
                     if (trimmedOutput.startsWith('http')) {
-                        resolve(trimmedOutput.split('\n')[0].trim());
-                    } else {
-                        console.log('PicGo output:', stdout);
-                        resolve(null);
+                        finish({ imageUrl: trimmedOutput.split('\n')[0].trim(), errorMessage: null });
+                        return;
                     }
+
+                    runtimeErrors.push(`Command '${candidate.displayName}' succeeded but returned no URL.`);
+                    if (trimmedOutput) {
+                        console.log('PicGo output:', trimmedOutput);
+                    }
+                    finish({ imageUrl: null, errorMessage: null });
+                    return;
                 }
-            } else {
-                console.error('PicGo error:', stderr);
-                resolve(null);
-            }
+
+                const errorText = (stderr || stdout).trim();
+                runtimeErrors.push(
+                    errorText
+                        ? `Command '${candidate.displayName}' failed (exit code ${code}): ${errorText}`
+                        : `Command '${candidate.displayName}' failed with exit code ${code}.`
+                );
+                finish({ imageUrl: null, errorMessage: null });
+            });
+
+            picgo.on('error', (err: NodeJS.ErrnoException) => {
+                if (err.code !== 'ENOENT') {
+                    runtimeErrors.push(
+                        `Command '${candidate.displayName}' failed to start: ${err.message}`
+                    );
+                }
+                finish({ imageUrl: null, errorMessage: null });
+            });
         });
 
-        picgo.on('error', (err) => {
-            console.error('Failed to start PicGo:', err);
-            resolve(null);
-        });
-    });
+        if (result.imageUrl) {
+            return result.imageUrl;
+        }
+    }
+
+    const attemptedText = attempted.join(', ');
+    const detailText = runtimeErrors.length > 0 ? ` Details: ${runtimeErrors[0]}` : '';
+    const message = `PicGo command not found or failed. Tried: ${attemptedText}. Configure 'markdown-image-control.picgoPath' to your PicGo executable.${detailText}`;
+    console.error(message);
+
+    return null;
 }
 
 /**
@@ -354,7 +479,7 @@ async function uploadClipboardImage() {
                 }
 
                 if (!imageUrl) {
-                    vscode.window.showErrorMessage('Failed to upload image with PicGo. Please check your PicGo configuration.');
+                    await showPicgoConfigError('Failed to upload image with PicGo. Please check setting markdown-image-control.picgoPath.');
                     return;
                 }
 
@@ -442,7 +567,7 @@ class PicgoPasteEditProvider implements vscode.DocumentPasteEditProvider {
         );
 
         if (!imageUrl) {
-            vscode.window.showErrorMessage('Failed to upload image with PicGo');
+            await showPicgoConfigError('Failed to upload image with PicGo. Please check setting markdown-image-control.picgoPath.');
             return undefined;
         }
 
