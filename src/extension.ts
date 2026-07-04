@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { exec, spawn } from 'child_process';
+import sharp from 'sharp';
 
 interface ImageOptions {
     altText: string[];
@@ -20,6 +21,35 @@ interface PicgoCommandCandidate {
 interface PicgoUploadResult {
     imageUrl: string | null;
     errorMessage: string | null;
+}
+
+const DIRECT_IMAGE_MIME_TYPES = new Set([
+    'image/png',
+    'image/jpeg',
+    'image/jpg',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/svg+xml'
+]);
+
+function getImageExtensionForMimeType(mimeType: string): string {
+    switch (mimeType) {
+        case 'image/jpeg':
+        case 'image/jpg':
+            return 'jpg';
+        case 'image/svg+xml':
+            return 'svg';
+        case 'image/bmp':
+            return 'bmp';
+        case 'image/tiff':
+        case 'image/tif':
+            return 'tiff';
+        default: {
+            const inferred = mimeType.split('/')[1] || 'png';
+            return inferred === 'jpeg' ? 'jpg' : inferred;
+        }
+    }
 }
 
 /**
@@ -287,30 +317,49 @@ async function saveClipboardImageToFile(): Promise<string | null> {
 
 /**
  * 从 DataTransfer 保存图片到临时文件
+ *
+ * 支持 Markdown 直接处理的格式会原样写入临时文件；
+ * HEIC/HEIF/TIFF 等不适合直接上传或预览的格式会先转成 PNG，再交给 PicGo。
  */
 async function saveDataTransferImageToFile(dataTransfer: vscode.DataTransfer): Promise<string | null> {
-    const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp'];
-    
-    for (const mimeType of imageTypes) {
+    for (const [mimeType] of dataTransfer) {
+        if (!mimeType.startsWith('image/')) {
+            continue;
+        }
+
         const item = dataTransfer.get(mimeType);
-        if (item) {
-            try {
-                const file = item.asFile();
-                if (file) {
-                    const data = await file.data();
-                    if (data && data.byteLength > 0) {
-                        const ext = mimeType.split('/')[1] || 'png';
-                        const tempDir = os.tmpdir();
-                        const tempFileName = `vscode_picgo_${Date.now()}.${ext}`;
-                        const tempFilePath = path.join(tempDir, tempFileName);
-                        
-                        fs.writeFileSync(tempFilePath, Buffer.from(data));
-                        return tempFilePath;
-                    }
-                }
-            } catch (e) {
-                console.error('Failed to read image from DataTransfer:', e);
+        if (!item) {
+            continue;
+        }
+
+        try {
+            const file = item.asFile();
+            if (!file) {
+                continue;
             }
+
+            const data = await file.data();
+            if (!data || data.byteLength <= 0) {
+                continue;
+            }
+
+            const buffer = Buffer.from(data);
+            const tempDir = os.tmpdir();
+
+            if (DIRECT_IMAGE_MIME_TYPES.has(mimeType)) {
+                const ext = getImageExtensionForMimeType(mimeType);
+                const tempFileName = `vscode_picgo_${Date.now()}.${ext}`;
+                const tempFilePath = path.join(tempDir, tempFileName);
+                fs.writeFileSync(tempFilePath, buffer);
+                return tempFilePath;
+            }
+
+            const tempFileName = `vscode_picgo_${Date.now()}.png`;
+            const tempFilePath = path.join(tempDir, tempFileName);
+            await sharp(buffer).png().toFile(tempFilePath);
+            return tempFilePath;
+        } catch (e) {
+            console.error(`Failed to read or convert image from DataTransfer (${mimeType}):`, e);
         }
     }
     

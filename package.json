@@ -2,7 +2,7 @@
   "name": "markdown-image-control",
   "displayName": "Markdown Image Control",
   "description": "Self-hosted VS Code extension: upload pasted Markdown images with PicGo and control Markdown preview image size/filter syntax.",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "publisher": "maple367",
   "license": "MIT",
   "icon": "icon.png",
@@ -21,13 +21,13 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-      "commands": [
+    "commands": [
       {
         "command": "markdown-image-control.uploadFromClipboard",
         "title": "Markdown Image: Upload Image from Clipboard with PicGo"
       }
     ],
-      "keybindings": [
+    "keybindings": [
       {
         "command": "markdown-image-control.uploadFromClipboard",
         "key": "ctrl+alt+v",
@@ -71,5 +71,8 @@
     "@vscode/vsce": "^3.9.1",
     "eslint": "^8.0.0",
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3"
   }
 }

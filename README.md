@@ -15,6 +15,11 @@ When editing Markdown, paste an image or run **Markdown Image: Upload Image from
 ![image](https://...)
 ```
 
+Supported image handling:
+
+- Direct upload for Markdown-friendly formats such as PNG, JPG/JPEG, GIF, WEBP, BMP, and SVG
+- Automatic conversion to PNG for unsupported formats before upload, including HEIC, HEIF, and TIFF
+
 ### Control Markdown preview image style
 
 Use directives in image alt text:
@@ -38,6 +43,11 @@ Directives are removed from the rendered `alt` text and converted to inline styl
 
 -- `markdown-image-control.picgoPath`: PicGo CLI executable path. Default: `picgo`
 -- `markdown-image-control.autoUploadOnPaste`: automatically upload image paste in Markdown. Default: `true`
+
+## Implementation notes
+
+- The extension uses `sharp` for image format conversion, so no extra image codec dependency is required for the common conversion flow.
+- If a pasted image is not directly supported by Markdown preview, it is converted to PNG and then uploaded through PicGo.
 
 ## Build locally
 
