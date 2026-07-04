@@ -564,19 +564,6 @@ class PicgoPasteEditProvider implements vscode.DocumentPasteEditProvider {
             return undefined;
         }
 
-        // 检查是否有图片
-        let hasImage = false;
-        for (const [mimeType] of dataTransfer) {
-            if (mimeType.startsWith('image/')) {
-                hasImage = true;
-                break;
-            }
-        }
-
-        if (!hasImage) {
-            return undefined;
-        }
-
         // 检查是否已取消
         if (token.isCancellationRequested) {
             return undefined;
@@ -660,7 +647,19 @@ export function activate(context: vscode.ExtensionContext) {
             providedPasteEditKinds: [
                 vscode.DocumentDropOrPasteEditKind.Empty.append('picgo', 'upload')
             ],
-            pasteMimeTypes: ['image/*', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']
+            pasteMimeTypes: [
+                'image/png',
+                'image/jpeg',
+                'image/gif',
+                'image/webp',
+                'image/bmp',
+                'image/tiff',
+                'image/tif',
+                'image/heic',
+                'image/heif',
+                'image/avif',
+                'image/svg+xml'
+            ]
         }
     );
     context.subscriptions.push(pasteProvider);
