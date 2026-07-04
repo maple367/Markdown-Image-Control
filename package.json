@@ -2,7 +2,7 @@
   "name": "markdown-image-control",
   "displayName": "Markdown Image Control",
   "description": "Self-hosted VS Code extension: upload pasted Markdown images with PicGo and control Markdown preview image size/filter syntax.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "maple367",
   "license": "MIT",
   "icon": "icon.png",
